@@ -1,0 +1,124 @@
+'use client'
+
+// @speckle/viewer を埋め込む 3D ビューコンポーネント。
+// モデルのロード完了後、親へ Viewer インスタンスとプロパティ一覧を渡す。
+
+import { useEffect, useRef, useState } from 'react'
+import {
+  Viewer,
+  DefaultViewerParams,
+  SpeckleLoader,
+  UrlHelper,
+  ViewerEvent,
+  CameraController,
+  SelectionExtension,
+  FilteringExtension,
+  type PropertyInfo,
+  type SelectionEvent
+} from '@speckle/viewer'
+
+export type ViewerReadyPayload = {
+  viewer: Viewer
+  filtering: FilteringExtension
+  camera: CameraController
+  properties: PropertyInfo[]
+}
+
+type Props = {
+  serverUrl: string
+  token: string
+  projectId: string
+  modelId: string
+  onReady: (payload: ViewerReadyPayload) => void
+  /** 3D 上のクリック。objectId は未ヒット時 null (表 → 選択解除に使う) */
+  onObjectClicked: (objectId: string | null) => void
+}
+
+export default function SpeckleViewer({
+  serverUrl,
+  token,
+  projectId,
+  modelId,
+  onReady,
+  onObjectClicked
+}: Props) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [status, setStatus] = useState<string>('ビューワ初期化中...')
+  const [error, setError] = useState<string | null>(null)
+
+  // 最新のコールバックを effect の再実行なしで参照する
+  const onReadyRef = useRef(onReady)
+  const onClickRef = useRef(onObjectClicked)
+  onReadyRef.current = onReady
+  onClickRef.current = onObjectClicked
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    let disposed = false
+    let viewer: Viewer | null = null
+
+    const run = async () => {
+      try {
+        viewer = new Viewer(container, {
+          ...DefaultViewerParams,
+          showStats: false,
+          verbose: false
+        })
+        await viewer.init()
+        if (disposed) return
+
+        const camera = viewer.createExtension(CameraController)
+        viewer.createExtension(SelectionExtension)
+        const filtering = viewer.createExtension(FilteringExtension)
+
+        viewer.on(ViewerEvent.ObjectClicked, (event: SelectionEvent | null) => {
+          const node = event?.hits?.[0]?.node
+          const objectId: string | null = node?.model?.raw?.id ?? node?.model?.id ?? null
+          onClickRef.current(objectId)
+        })
+
+        setStatus('モデルを読み込み中...')
+        const modelUrl = `${serverUrl}/projects/${projectId}/models/${modelId}`
+        const urls = await UrlHelper.getResourceUrls(modelUrl, token)
+        if (urls.length === 0) {
+          throw new Error('モデルのリソース URL を解決できません (バージョンが存在するか確認)')
+        }
+        for (const url of urls) {
+          const loader = new SpeckleLoader(viewer.getWorldTree(), url, token)
+          await viewer.loadObject(loader, true)
+          if (disposed) return
+        }
+
+        setStatus('プロパティを解析中...')
+        const properties = await viewer.getObjectProperties()
+        if (disposed) return
+
+        camera.setCameraView([], false)
+        setStatus('')
+        onReadyRef.current({ viewer, filtering, camera, properties })
+      } catch (e) {
+        if (!disposed) setError(e instanceof Error ? e.message : String(e))
+      }
+    }
+    void run()
+
+    const handleResize = () => viewer?.resize()
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      disposed = true
+      window.removeEventListener('resize', handleResize)
+      viewer?.dispose()
+    }
+  }, [serverUrl, token, projectId, modelId])
+
+  return (
+    <div className="viewer-wrap">
+      <div ref={containerRef} className="viewer-container" />
+      {status && !error && <div className="viewer-overlay">{status}</div>}
+      {error && <div className="viewer-overlay viewer-error">読み込みエラー: {error}</div>}
+    </div>
+  )
+}

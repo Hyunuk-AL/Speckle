@@ -1,0 +1,318 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: 'Hiragino Kaku Gothic ProN', 'Yu Gothic', Meiryo, system-ui, sans-serif;
+  font-size: 14px;
+  color: #1f2430;
+  background: #f3f4f6;
+}
+
+a {
+  color: #2563eb;
+}
+
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
+/* ---- 接続画面 ---- */
+
+.connect-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px;
+}
+
+.connect-page h1 {
+  font-size: 22px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.card h2 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.field {
+  display: block;
+  margin: 12px 0;
+}
+
+.field span {
+  display: block;
+  font-size: 12px;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.primary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+}
+
+.primary:disabled {
+  background: #93c5fd;
+  cursor: default;
+}
+
+.ghost {
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 8px 14px;
+}
+
+.error-text {
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.hint {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.model-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.model-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: #fafafa;
+}
+
+.model-list li:hover {
+  background: #eef2ff;
+}
+
+/* ---- ダッシュボード ---- */
+
+.dashboard {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.viewer-pane {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.viewer-wrap,
+.viewer-container {
+  position: absolute;
+  inset: 0;
+}
+
+.viewer-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(243, 244, 246, 0.85);
+  font-size: 15px;
+  z-index: 5;
+}
+
+.viewer-error {
+  color: #dc2626;
+  padding: 24px;
+  text-align: center;
+}
+
+.side-pane {
+  width: 440px;
+  flex: none;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 14px;
+  gap: 12px;
+}
+
+.side-pane h1 {
+  font-size: 16px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.side-pane h1 a {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #444;
+}
+
+.controls select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.button-row button {
+  font-size: 12px;
+  padding: 7px 12px;
+}
+
+.button-row .active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+/* ---- 集計表 ---- */
+
+.table-wrap {
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+th,
+td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  text-align: left;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 1;
+}
+
+td.num,
+th.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: #f1f5f9;
+}
+
+tbody tr.isolated {
+  background: #dbeafe;
+}
+
+tbody tr.highlighted {
+  outline: 2px solid #f59e0b;
+  outline-offset: -2px;
+}
+
+tfoot td {
+  font-weight: bold;
+  background: #f8fafc;
+  position: sticky;
+  bottom: 0;
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+}
+
+/* ---- グラフ ---- */
+
+.charts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chart {
+  height: 240px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.texture-result {
+  font-size: 12px;
+  color: #444;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px 10px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

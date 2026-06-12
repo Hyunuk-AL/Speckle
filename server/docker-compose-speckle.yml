@@ -1,0 +1,156 @@
+# Speckle Server 本体 (公開 Docker イメージ版 / ビルド不要)
+#
+# 前提: docker-compose-deps.yml が先に起動していること
+# 起動:  docker compose -f docker-compose-speckle.yml up -d
+# ログ:  docker compose -f docker-compose-speckle.yml logs -f speckle-server
+#
+# 設定値は同ディレクトリの .env で上書きできます (.env.example 参照)
+
+name: speckle-app
+
+services:
+  # リバースプロキシ。http://localhost (80番) でフロントエンドと API を一本化する
+  speckle-ingress:
+    image: speckle/speckle-docker-compose-ingress:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    ports:
+      - '0.0.0.0:${HOST_PORT:-80}:8080'
+    environment:
+      FILE_SIZE_LIMIT_MB: ${FILE_SIZE_LIMIT_MB:-100}
+      NGINX_ENVSUBST_OUTPUT_DIR: '/etc/nginx'
+    depends_on:
+      - speckle-server
+      - speckle-frontend-2
+    networks:
+      - speckle
+
+  speckle-frontend-2:
+    image: speckle/speckle-frontend-2:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    environment:
+      NUXT_PUBLIC_SERVER_NAME: 'local'
+      # ユーザーがブラウザからアクセスする URL
+      NUXT_PUBLIC_API_ORIGIN: ${CANONICAL_URL:-http://localhost}
+      NUXT_PUBLIC_BASE_URL: ${CANONICAL_URL:-http://localhost}
+      # compose ネットワーク内からサーバーへアクセスする URL
+      NUXT_PUBLIC_BACKEND_API_ORIGIN: 'http://speckle-server:3000'
+      NUXT_PUBLIC_LOG_LEVEL: 'warn'
+      NUXT_REDIS_URL: 'redis://redis'
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+    depends_on:
+      - speckle-server
+    networks:
+      - speckle
+
+  speckle-server:
+    image: speckle/speckle-server:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    healthcheck:
+      test:
+        - CMD
+        - /nodejs/bin/node
+        - -e
+        - "try { require('node:http').request({headers: {'Content-Type': 'application/json'}, port:3000, hostname:'127.0.0.1', path:'/readiness', method: 'GET', timeout: 2000 }, (res) => { body = ''; res.on('data', (chunk) => {body += chunk;}); res.on('end', () => {process.exit(res.statusCode != 200 || body.toLowerCase().includes('error') ? 1 : 0);}); }).end(); } catch { process.exit(1); }"
+      interval: 10s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    environment:
+      # ブラウザ / Revit コネクタからアクセスする URL。後から変更するとデータ参照が崩れるので注意
+      CANONICAL_URL: ${CANONICAL_URL:-http://localhost}
+      # compose ネットワーク内の他サービス (preview 等) から見たサーバー URL
+      PRIVATE_OBJECTS_SERVER_URL: 'http://speckle-server:3000'
+
+      # 必ず .env で一意なランダム文字列に変更すること
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET を .env に設定してください}
+
+      # メール+パスワードでのログインを有効化
+      STRATEGY_LOCAL: 'true'
+
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+
+      POSTGRES_URL: 'postgres'
+      POSTGRES_USER: 'speckle'
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-speckle}
+      POSTGRES_DB: 'speckle'
+
+      REDIS_URL: 'redis://redis'
+      PREVIEW_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: 'true'
+      PREVIEW_SERVICE_REDIS_URL: 'redis://redis'
+      FILEIMPORT_SERVICE_USE_PRIVATE_OBJECTS_SERVER_URL: 'true'
+      FILEIMPORT_SERVICE_REDIS_URL: 'redis://redis'
+      FILEIMPORT_QUEUE_POSTGRES_URL: 'postgresql://speckle:${POSTGRES_PASSWORD:-speckle}@postgres/speckle'
+
+      S3_ENDPOINT: 'http://minio:9000'
+      # ブラウザからプレビュー画像等を参照する際の MinIO URL
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:9000}
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      S3_BUCKET: 'speckle-server'
+      S3_CREATE_BUCKET: 'true'
+      S3_REGION: ''
+      FILE_SIZE_LIMIT_MB: ${FILE_SIZE_LIMIT_MB:-100}
+
+      # PoC ではメール送信は未設定 (招待リンクはサーバーログに出力される)
+      EMAIL_FROM: 'no-reply@example.org'
+      EMAIL_SECURE: 'false'
+      EMAIL_REQUIRE_TLS: 'false'
+
+      FRONTEND_ORIGIN: ${CANONICAL_URL:-http://localhost}
+    networks:
+      - speckle
+
+  # 3D プレビュー画像 (プロジェクト一覧のサムネイル) を生成するサービス
+  preview-service:
+    image: speckle/speckle-preview-service:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    mem_limit: '3000m'
+    memswap_limit: '3000m'
+    environment:
+      HOST: '127.0.0.1'
+      PORT: '3001'
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+      REDIS_URL: 'redis://redis'
+    networks:
+      - speckle
+
+  # webhook 配信サービス (Step 3 後半の「新バージョン検知 → DB 抽出」で利用予定)
+  webhook-service:
+    image: speckle/speckle-webhook-service:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    environment:
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+      PG_CONNECTION_STRING: 'postgres://speckle:${POSTGRES_PASSWORD:-speckle}@postgres/speckle'
+    depends_on:
+      - speckle-server
+    networks:
+      - speckle
+
+  # IFC/OBJ/STL ファイルアップロード取込サービス。
+  # Revit コネクタからの Publish には不要なので、PoC では任意 (profile で無効化済み)。
+  # 有効化: docker compose -f docker-compose-speckle.yml --profile fileimport up -d
+  fileimport-service:
+    image: speckle/speckle-fileimport-service:${SPECKLE_VERSION:-2.31.11}
+    restart: always
+    profiles:
+      - fileimport
+    environment:
+      LOG_LEVEL: 'info'
+      LOG_PRETTY: 'true'
+      PG_CONNECTION_STRING: 'postgres://speckle:${POSTGRES_PASSWORD:-speckle}@postgres/speckle'
+      SPECKLE_SERVER_URL: 'http://speckle-server:3000'
+      FILE_IMPORT_TIME_LIMIT_MIN: 10
+    depends_on:
+      - speckle-server
+    networks:
+      - speckle
+
+networks:
+  # docker-compose-deps.yml が作成する外部ネットワークに相乗りする
+  speckle:
+    external: true
+    name: speckle

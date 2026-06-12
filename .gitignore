@@ -1,0 +1,14 @@
+# 環境変数 (シークレットを含むため必ず除外)
+server/.env
+dashboard/.env*.local
+
+# Node / Next.js
+node_modules/
+dashboard/.next/
+dashboard/out/
+dashboard/*.tsbuildinfo
+dashboard/next-env.d.ts
+
+# OS / エディタ
+.DS_Store
+Thumbs.db

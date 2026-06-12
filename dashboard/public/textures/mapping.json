@@ -1,0 +1,35 @@
+{
+  "$comment": "Revit マテリアル名 → テクスチャの対応表。キーは完全一致が優先され、なければ大文字小文字を無視した部分一致で解決される。map / normalMap は public 配下の相対 URL か、MinIO 等の絶対 URL を指定。tiling は UV の繰り返し回数。",
+  "materials": {
+    "コンクリート": {
+      "map": "/textures/samples/concrete.png",
+      "tiling": { "u": 2, "v": 2 },
+      "roughness": 0.95
+    },
+    "Concrete": {
+      "map": "/textures/samples/concrete.png",
+      "tiling": { "u": 2, "v": 2 },
+      "roughness": 0.95
+    },
+    "木材": {
+      "map": "/textures/samples/wood.png",
+      "tiling": { "u": 1, "v": 1 },
+      "roughness": 0.7
+    },
+    "Wood": {
+      "map": "/textures/samples/wood.png",
+      "tiling": { "u": 1, "v": 1 },
+      "roughness": 0.7
+    },
+    "れんが": {
+      "map": "/textures/samples/brick.png",
+      "tiling": { "u": 4, "v": 4 },
+      "roughness": 0.9
+    },
+    "Brick": {
+      "map": "/textures/samples/brick.png",
+      "tiling": { "u": 4, "v": 4 },
+      "roughness": 0.9
+    }
+  }
+}
