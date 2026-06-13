@@ -23,6 +23,12 @@ export type ViewerReadyPayload = {
   selection: SelectionExtension
   camera: CameraController
   properties: PropertyInfo[]
+  /**
+   * 集計プロパティの ID (raw.id) を、ビューワが選択/ズームに使う描画可能なノード ID
+   * (model.id。インスタンスは複合 ID) に変換する。
+   * 描画ジオメトリを持つノードのみ返す。
+   */
+  resolveRenderableIds: (propertyIds: string[]) => string[]
 }
 
 type Props = {
@@ -96,13 +102,55 @@ export default function SpeckleViewer({
         const properties = await viewer.getObjectProperties()
         if (disposed) return
 
+        // raw.id (集計が使う ID) → model.id (選択/カメラが使う ID) の対応表を作る。
+        // Revit のファミリインスタンスは model.id が複合 ID になり raw.id と一致しないため、
+        // この変換を挟まないと選択・ズームが該当要素を見つけられない。
+        const worldTree = viewer.getWorldTree()
+        const renderTree = worldTree.getRenderTree()
+        const idMap = new Map<string, string[]>()
+        worldTree.walk((node) => {
+          const rawId: string | undefined = node.model?.raw?.id
+          const modelId: string | undefined = node.model?.id
+          if (rawId && modelId) {
+            const arr = idMap.get(rawId)
+            if (arr) arr.push(modelId)
+            else idMap.set(rawId, [modelId])
+          }
+          return true
+        })
+
+        const resolveRenderableIds = (propertyIds: string[]): string[] => {
+          const result = new Set<string>()
+          for (const pid of propertyIds) {
+            const candidates = idMap.get(pid) ?? [pid]
+            for (const cid of candidates) {
+              const nodes = worldTree.findId(cid)
+              if (!nodes) continue
+              for (const node of nodes) {
+                if (renderTree.getRenderViewsForNode(node).length > 0) {
+                  result.add(cid)
+                  break
+                }
+              }
+            }
+          }
+          return [...result]
+        }
+
         // モデル全体が画面に収まるようカメラを合わせる。
         // 空配列 [] を渡すと「0個の要素にズーム」と解釈され画面が真っ白になるため、
         // undefined を渡して zoomExtents (全体表示) を発火させる。
         viewer.resize()
         camera.setCameraView(undefined, false)
         setStatus('')
-        onReadyRef.current({ viewer, filtering, selection, camera, properties })
+        onReadyRef.current({
+          viewer,
+          filtering,
+          selection,
+          camera,
+          properties,
+          resolveRenderableIds
+        })
       } catch (e) {
         if (!disposed) setError(e instanceof Error ? e.message : String(e))
       }

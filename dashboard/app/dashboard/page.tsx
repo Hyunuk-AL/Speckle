@@ -88,7 +88,10 @@ function DashboardInner() {
     if (!ctx) return
     if (colorized && rows.length > 0) {
       ctx.filtering.setUserObjectColors(
-        rows.map((r, i) => ({ objectIds: r.ids, color: colorAt(i) }))
+        rows.map((r, i) => ({
+          objectIds: ctx.resolveRenderableIds(r.ids),
+          color: colorAt(i)
+        }))
       )
     } else {
       ctx.filtering.removeUserObjectColors()
@@ -109,15 +112,20 @@ function DashboardInner() {
         ctx.camera.setCameraView(undefined, true)
         return
       }
+      // 集計の ID を、ビューワが選択/ズームに使える描画可能なノード ID に変換する
+      const renderableIds = ctx.resolveRenderableIds(row.ids)
       if (isolateMode) {
         // 分離表示: 他要素を隠す
-        ctx.filtering.isolateObjects(row.ids, 'dashboard', true, true)
+        ctx.filtering.isolateObjects(renderableIds, 'dashboard', true, true)
       } else {
         // Speckle cloud 同様: 全体は表示したまま該当要素を選択ハイライト
-        ctx.selection.selectObjects(row.ids)
+        ctx.selection.selectObjects(renderableIds)
       }
       setIsolatedValue(value)
-      ctx.camera.setCameraView(row.ids, true)
+      // 描画可能な要素が無い場合はカメラ移動しない (空の範囲エラーを避ける)
+      if (renderableIds.length > 0) {
+        ctx.camera.setCameraView(renderableIds, true)
+      }
     },
     [ctx, rows, isolatedValue, isolateMode]
   )
