@@ -157,11 +157,17 @@ export default function SpeckleViewer({
     }
     void run()
 
+    // コンテナ自体のサイズ変化を監視して canvas をリサイズする。
+    // window の resize だけでは、初期レイアウト確定やパネル幅変化で
+    // コンテナ幅が変わったケースを取りこぼし、canvas が細いまま残ることがある。
     const handleResize = () => viewer?.resize()
+    const resizeObserver = new ResizeObserver(() => handleResize())
+    resizeObserver.observe(container)
     window.addEventListener('resize', handleResize)
 
     return () => {
       disposed = true
+      resizeObserver.disconnect()
       window.removeEventListener('resize', handleResize)
       viewer?.dispose()
     }
