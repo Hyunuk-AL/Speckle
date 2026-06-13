@@ -106,7 +106,7 @@ function DashboardInner() {
       if (isolatedValue === value) {
         // 同じ行の再クリックで解除し、全体表示に戻す
         setIsolatedValue(null)
-        ctx.camera.setCameraView([], true)
+        ctx.camera.setCameraView(undefined, true)
         return
       }
       if (isolateMode) {
@@ -147,7 +147,7 @@ function DashboardInner() {
     setIsolatedValue(null)
     setHighlightedValue(null)
     setColorized(false)
-    ctx.camera.setCameraView([], true)
+    ctx.camera.setCameraView(undefined, true)
   }, [ctx])
 
   const handleApplyTextures = useCallback(async () => {

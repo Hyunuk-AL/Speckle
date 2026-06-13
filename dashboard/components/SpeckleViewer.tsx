@@ -96,7 +96,11 @@ export default function SpeckleViewer({
         const properties = await viewer.getObjectProperties()
         if (disposed) return
 
-        camera.setCameraView([], false)
+        // モデル全体が画面に収まるようカメラを合わせる。
+        // 空配列 [] を渡すと「0個の要素にズーム」と解釈され画面が真っ白になるため、
+        // undefined を渡して zoomExtents (全体表示) を発火させる。
+        viewer.resize()
+        camera.setCameraView(undefined, false)
         setStatus('')
         onReadyRef.current({ viewer, filtering, selection, camera, properties })
       } catch (e) {
