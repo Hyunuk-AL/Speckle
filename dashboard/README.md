@@ -9,7 +9,7 @@ Speckle Intelligence 相当の集計・可視化を行う Web アプリ。
 |------|------|
 | 3D ビューワ埋め込み | `@speckle/viewer` (Three.js ベース) |
 | 集計表 | ロード済みオブジェクトの全プロパティから「グループ軸」「集計値 (合計)」を選択して集計 |
-| 表 → ビュー連携 | 行クリック → `FilteringExtension.isolateObjects()` で該当要素を分離表示 + ズーム |
+| 表 → ビュー連携 | 行クリック → `SelectionExtension.selectObjects()` で該当要素を選択ハイライト (Speckle cloud と同様、全体は表示したまま) + ズーム。「分離表示」トグル ON で `FilteringExtension.isolateObjects()` (他要素を隠す) に切替 |
 | ビュー → 表連携 | 3D 上で要素クリック → 該当する集計行をハイライト + スクロール |
 | 色分け表示 | グループごとに `setUserObjectColors()` で着色 (ALBS「色分け作成」の Web 再現) |
 | グラフ | 円グラフ (件数構成比) / 棒グラフ (集計値)。クリックで分離表示連動 (ECharts) |

@@ -37,6 +37,8 @@ function DashboardInner() {
   const [isolatedValue, setIsolatedValue] = useState<string | null>(null)
   const [highlightedValue, setHighlightedValue] = useState<string | null>(null)
   const [colorized, setColorized] = useState(false)
+  // false: Speckle cloud 同様、全体表示のまま選択ハイライト / true: 該当要素のみ分離表示
+  const [isolateMode, setIsolateMode] = useState(false)
   const [textureResult, setTextureResult] = useState<string | null>(null)
   const [textureBusy, setTextureBusy] = useState(false)
 
@@ -93,29 +95,36 @@ function DashboardInner() {
     }
   }, [ctx, colorized, rows, isolatedValue])
 
-  const isolateRow = useCallback(
+  const selectRow = useCallback(
     (value: string) => {
       if (!ctx) return
       const row = rows.find((r) => r.value === value)
       if (!row) return
+      // いったん前回の選択/分離を解除
+      ctx.filtering.resetFilters()
+      ctx.selection.clearSelection()
       if (isolatedValue === value) {
-        // 再クリックで解除
-        ctx.filtering.resetFilters()
+        // 同じ行の再クリックで解除し、全体表示に戻す
         setIsolatedValue(null)
         ctx.camera.setCameraView([], true)
-      } else {
-        ctx.filtering.resetFilters()
-        ctx.filtering.isolateObjects(row.ids, 'dashboard', true, true)
-        setIsolatedValue(value)
-        ctx.camera.setCameraView(row.ids, true)
+        return
       }
+      if (isolateMode) {
+        // 分離表示: 他要素を隠す
+        ctx.filtering.isolateObjects(row.ids, 'dashboard', true, true)
+      } else {
+        // Speckle cloud 同様: 全体は表示したまま該当要素を選択ハイライト
+        ctx.selection.selectObjects(row.ids)
+      }
+      setIsolatedValue(value)
+      ctx.camera.setCameraView(row.ids, true)
     },
-    [ctx, rows, isolatedValue]
+    [ctx, rows, isolatedValue, isolateMode]
   )
 
   const handleRowClick = useCallback(
-    (row: AggregationRow) => isolateRow(row.value),
-    [isolateRow]
+    (row: AggregationRow) => selectRow(row.value),
+    [selectRow]
   )
 
   // 3D クリック → 該当行のハイライト
@@ -134,6 +143,7 @@ function DashboardInner() {
   const resetAll = useCallback(() => {
     if (!ctx) return
     ctx.filtering.resetFilters()
+    ctx.selection.clearSelection()
     setIsolatedValue(null)
     setHighlightedValue(null)
     setColorized(false)
@@ -207,6 +217,14 @@ function DashboardInner() {
           </label>
           <div className="button-row">
             <button
+              className={'ghost' + (isolateMode ? ' active' : '')}
+              disabled={!ctx}
+              onClick={() => setIsolateMode((v) => !v)}
+              title="OFF: 全体表示のままハイライト (Speckle cloud と同様) / ON: 該当要素のみ分離表示"
+            >
+              {isolateMode ? '分離表示: ON' : '分離表示: OFF'}
+            </button>
+            <button
               className={'ghost' + (colorized ? ' active' : '')}
               disabled={!ctx}
               onClick={() => setColorized((v) => !v)}
@@ -241,7 +259,7 @@ function DashboardInner() {
             <ChartPanel
               rows={rows}
               measureLabel={measureProp ? measureProp.key.split('.').slice(-2)[0] : null}
-              onSelectValue={isolateRow}
+              onSelectValue={selectRow}
             />
           </>
         )}

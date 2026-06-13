@@ -20,6 +20,7 @@ import {
 export type ViewerReadyPayload = {
   viewer: Viewer
   filtering: FilteringExtension
+  selection: SelectionExtension
   camera: CameraController
   properties: PropertyInfo[]
 }
@@ -70,7 +71,7 @@ export default function SpeckleViewer({
         if (disposed) return
 
         const camera = viewer.createExtension(CameraController)
-        viewer.createExtension(SelectionExtension)
+        const selection = viewer.createExtension(SelectionExtension)
         const filtering = viewer.createExtension(FilteringExtension)
 
         viewer.on(ViewerEvent.ObjectClicked, (event: SelectionEvent | null) => {
@@ -97,7 +98,7 @@ export default function SpeckleViewer({
 
         camera.setCameraView([], false)
         setStatus('')
-        onReadyRef.current({ viewer, filtering, camera, properties })
+        onReadyRef.current({ viewer, filtering, selection, camera, properties })
       } catch (e) {
         if (!disposed) setError(e instanceof Error ? e.message : String(e))
       }
