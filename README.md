@@ -18,6 +18,7 @@ Revit から Publish したデータのパラメータを使って Speckle Intel
     ├── poc-plan.md                  PoC 計画書
     ├── 01-server-setup.md           Step 1 起動手順書 (Windows + WSL2 + Docker Desktop)
     ├── 02-revit-and-graphql.md      Step 2 Revit 送信 + GraphQL クエリ集
+    ├── 03-operations.md             日常運用ガイド (起動/終了/確認/更新の反映)
     └── troubleshooting.md           トラブルシュートメモ
 ```
 
