@@ -34,6 +34,7 @@ const VIEWS: { label: string; view: 'top' | 'front' | 'back' | 'left' | 'right' 
 
 export default function ViewerWidget({ context }: { context: WidgetContext }) {
   const wrapRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<CameraController | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
 
@@ -80,6 +81,17 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
     setShowHud(true)
     const timer = window.setTimeout(() => setShowHud(false), 6000)
     return () => window.clearTimeout(timer)
+  }, [walking])
+
+  // ウォークスルー中のフリールック: マウス移動だけで視点回転 (ボタン不要)
+  useEffect(() => {
+    const stage = stageRef.current
+    if (!walking || !stage) return
+    const onMove = (e: PointerEvent) => {
+      walkRef.current?.look(e.movementX || 0, e.movementY || 0)
+    }
+    stage.addEventListener('pointermove', onMove)
+    return () => stage.removeEventListener('pointermove', onMove)
   }, [walking])
 
   // 設定変更を実行中のコントローラへ反映 + 保存
@@ -189,12 +201,7 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
       </div>
 
       {/* 3D 表示エリア */}
-      <div
-        className={'viewer-stage' + (walking ? ' walking' : '')}
-        onPointerMove={(e) => {
-          if (walking) walkRef.current?.look(e.movementX, e.movementY)
-        }}
-      >
+      <div ref={stageRef} className={'viewer-stage' + (walking ? ' walking' : '')}>
         <SpeckleViewer
           serverUrl={context.serverUrl}
           token={context.token}
