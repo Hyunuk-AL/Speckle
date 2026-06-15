@@ -45,6 +45,7 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
   const [showNav, setShowNav] = useState(false)
   const [coords, setCoords] = useState<Coords | null>(null)
   const [walking, setWalking] = useState(false)
+  const [showHud, setShowHud] = useState(false)
   const [showWalkSettings, setShowWalkSettings] = useState(false)
   const [walkSettings, setWalkSettings] = useState<WalkSettings>(loadWalkSettings)
 
@@ -69,6 +70,17 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
       setWalking(true)
     }
   }, [walkSettings])
+
+  // ウォークスルー開始時に案内を表示し、6 秒後に自動で消す
+  useEffect(() => {
+    if (!walking) {
+      setShowHud(false)
+      return
+    }
+    setShowHud(true)
+    const timer = window.setTimeout(() => setShowHud(false), 6000)
+    return () => window.clearTimeout(timer)
+  }, [walking])
 
   // 設定変更を実行中のコントローラへ反映 + 保存
   useEffect(() => {
@@ -131,17 +143,8 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
 
   return (
     <div className="viewer-widget" ref={wrapRef}>
-      <SpeckleViewer
-        serverUrl={context.serverUrl}
-        token={context.token}
-        projectId={context.projectId}
-        modelId={context.modelId}
-        onReady={handleReady}
-        onObjectClicked={() => {}}
-      />
-
-      {/* ツールバー (右上) */}
-      <div className="viewer-toolbar">
+      {/* カード上部の固定ツールバー (3D に重ならない) */}
+      <div className="viewer-bar">
         <button title="全体にズーム" onClick={zoomAll} disabled={!ready}>
           ⊹
         </button>
@@ -185,46 +188,58 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
         </button>
       </div>
 
-      {/* ウォークスルー設定パネル */}
-      {showWalkSettings && (
-        <WalkthroughSettings
-          settings={walkSettings}
-          onChange={setWalkSettings}
-          onClose={() => setShowWalkSettings(false)}
+      {/* 3D 表示エリア */}
+      <div className="viewer-stage">
+        <SpeckleViewer
+          serverUrl={context.serverUrl}
+          token={context.token}
+          projectId={context.projectId}
+          modelId={context.modelId}
+          onReady={handleReady}
+          onObjectClicked={() => {}}
         />
-      )}
 
-      {/* ウォークスルー中の操作ヒント */}
-      {walking && (
-        <div className="walk-hud">
-          🚶 ウォークスルー中 — WASD/矢印で移動、マウスドラッグで視点、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
-        </div>
-      )}
+        {/* ウォークスルー設定パネル */}
+        {showWalkSettings && (
+          <WalkthroughSettings
+            settings={walkSettings}
+            onChange={setWalkSettings}
+            onClose={() => setShowWalkSettings(false)}
+          />
+        )}
 
-      {/* 座標表示 (左下) */}
-      {showCoords && (
-        <div className="viewer-coords">
-          {coords ? (
-            <>
-              <div>視点 X {fmt(coords.px)} / Y {fmt(coords.py)} / Z {fmt(coords.pz)}</div>
-              <div>注視 X {fmt(coords.tx)} / Y {fmt(coords.ty)} / Z {fmt(coords.tz)}</div>
-            </>
-          ) : (
-            <div>座標取得中...</div>
-          )}
-        </div>
-      )}
+        {/* ウォークスルー中の操作ヒント (一定時間で自動的に消える) */}
+        {showHud && (
+          <div className="walk-hud">
+            🚶 WASD/矢印で移動、マウスドラッグで視点、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
+          </div>
+        )}
 
-      {/* ナビゲーション (右下) */}
-      {showNav && (
-        <div className="viewer-nav">
-          {VIEWS.map((v) => (
-            <button key={v.view} onClick={() => setView(v.view)}>
-              {v.label}
-            </button>
-          ))}
-        </div>
-      )}
+        {/* 座標表示 (左下) */}
+        {showCoords && (
+          <div className="viewer-coords">
+            {coords ? (
+              <>
+                <div>視点 X {fmt(coords.px)} / Y {fmt(coords.py)} / Z {fmt(coords.pz)}</div>
+                <div>注視 X {fmt(coords.tx)} / Y {fmt(coords.ty)} / Z {fmt(coords.tz)}</div>
+              </>
+            ) : (
+              <div>座標取得中...</div>
+            )}
+          </div>
+        )}
+
+        {/* ナビゲーション (右下) */}
+        {showNav && (
+          <div className="viewer-nav">
+            {VIEWS.map((v) => (
+              <button key={v.view} onClick={() => setView(v.view)}>
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
