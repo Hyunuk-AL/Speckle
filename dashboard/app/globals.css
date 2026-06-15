@@ -680,3 +680,158 @@ tfoot td {
   background: #eef2ff;
   border-color: #c7d2fe;
 }
+
+/* ウォークスルー HUD */
+.walk-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 8px;
+  transform: translateX(-50%);
+  z-index: 25;
+  background: rgba(17, 24, 39, 0.85);
+  color: #fff;
+  font-size: 11px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ウォークスルー設定パネル */
+.walk-settings {
+  position: absolute;
+  top: 46px;
+  right: 8px;
+  z-index: 30;
+  width: 300px;
+  max-height: calc(100% - 60px);
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  font-size: 12px;
+}
+
+.walk-settings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.walk-close {
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  line-height: 1;
+  color: #9ca3af;
+}
+
+.walk-close:hover {
+  color: #dc2626;
+}
+
+.walk-section {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.walk-subtitle {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #374151;
+}
+
+.walk-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.walk-row span {
+  width: 88px;
+  flex: none;
+  color: #555;
+}
+
+.walk-row input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.walk-row em {
+  width: 36px;
+  text-align: right;
+  font-style: normal;
+  color: #2563eb;
+  font-variant-numeric: tabular-nums;
+}
+
+.walk-bind-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.walk-action {
+  width: 64px;
+  flex: none;
+  padding-top: 4px;
+  color: #555;
+}
+
+.walk-keys {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.walk-key-chip {
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+.walk-key-chip:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.walk-capture {
+  border: 1px dashed #94a3b8;
+  background: #fff;
+  border-radius: 5px;
+  padding: 3px 7px;
+  font-size: 11px;
+  color: #2563eb;
+}
+
+.walk-capture.capturing {
+  background: #2563eb;
+  color: #fff;
+  border-style: solid;
+}
+
+.walk-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: none;
+}
+
+.walk-hint {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.walk-footer .ghost {
+  font-size: 11px;
+  padding: 5px 10px;
+}

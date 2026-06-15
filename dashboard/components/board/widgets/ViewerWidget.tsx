@@ -6,8 +6,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { CameraEvent, type CameraController, type Viewer } from '@speckle/viewer'
+import { type CameraController, type Viewer } from '@speckle/viewer'
 import type { ViewerReadyPayload } from '@/components/SpeckleViewer'
+import {
+  WalkthroughController,
+  loadWalkSettings,
+  saveWalkSettings,
+  type WalkSettings
+} from '@/lib/dashboard/walkthrough'
+import WalkthroughSettings from './WalkthroughSettings'
 import type { WidgetContext } from './registry'
 
 const SpeckleViewer = dynamic(() => import('@/components/SpeckleViewer'), { ssr: false })
@@ -30,16 +37,51 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
   const cameraRef = useRef<CameraController | null>(null)
   const viewerRef = useRef<Viewer | null>(null)
 
+  const walkRef = useRef<WalkthroughController | null>(null)
+
   const [ready, setReady] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [showCoords, setShowCoords] = useState(false)
   const [showNav, setShowNav] = useState(false)
   const [coords, setCoords] = useState<Coords | null>(null)
+  const [walking, setWalking] = useState(false)
+  const [showWalkSettings, setShowWalkSettings] = useState(false)
+  const [walkSettings, setWalkSettings] = useState<WalkSettings>(loadWalkSettings)
 
   const handleReady = useCallback((payload: ViewerReadyPayload) => {
     cameraRef.current = payload.camera
     viewerRef.current = payload.viewer
     setReady(true)
+  }, [])
+
+  // ウォークスルーの開始/終了
+  const toggleWalk = useCallback(() => {
+    const cam = cameraRef.current
+    if (!cam) return
+    if (walkRef.current?.isActive()) {
+      walkRef.current.disable()
+      walkRef.current = null
+      setWalking(false)
+    } else {
+      const ctrl = new WalkthroughController(cam, walkSettings)
+      ctrl.enable()
+      walkRef.current = ctrl
+      setWalking(true)
+    }
+  }, [walkSettings])
+
+  // 設定変更を実行中のコントローラへ反映 + 保存
+  useEffect(() => {
+    walkRef.current?.updateSettings(walkSettings)
+    saveWalkSettings(walkSettings)
+  }, [walkSettings])
+
+  // アンマウント時に確実に解除
+  useEffect(() => {
+    return () => {
+      walkRef.current?.disable()
+      walkRef.current = null
+    }
   }, [])
 
   // 全画面状態の同期
@@ -120,12 +162,44 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
           🧭
         </button>
         <button
+          title="ウォークスルー (一人称移動)"
+          className={walking ? 'on' : ''}
+          onClick={toggleWalk}
+          disabled={!ready}
+        >
+          🚶
+        </button>
+        <button
+          title="ウォークスルー設定 (キー割当)"
+          className={showWalkSettings ? 'on' : ''}
+          onClick={() => setShowWalkSettings((v) => !v)}
+          disabled={!ready}
+        >
+          ⚙
+        </button>
+        <button
           title={isFullscreen ? '全画面を終了' : '全画面表示'}
           onClick={toggleFullscreen}
         >
           {isFullscreen ? '🗗' : '⛶'}
         </button>
       </div>
+
+      {/* ウォークスルー設定パネル */}
+      {showWalkSettings && (
+        <WalkthroughSettings
+          settings={walkSettings}
+          onChange={setWalkSettings}
+          onClose={() => setShowWalkSettings(false)}
+        />
+      )}
+
+      {/* ウォークスルー中の操作ヒント */}
+      {walking && (
+        <div className="walk-hud">
+          🚶 ウォークスルー中 — WASD/矢印で移動、マウスドラッグで視点、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
+        </div>
+      )}
 
       {/* 座標表示 (左下) */}
       {showCoords && (
