@@ -4,10 +4,12 @@
 // ツールバー (全画面 / 座標表示 / ナビゲーション) を重ねる。
 // M1 では単体表示。他カードとの選択連動は M3 で実装予定。
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useContext, useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import dynamic from 'next/dynamic'
 import { type CameraController, type Viewer } from '@speckle/viewer'
 import type { ViewerReadyPayload } from '@/components/SpeckleViewer'
+import { WidgetHeaderSlotContext } from '../WidgetFrame'
 import {
   WalkthroughController,
   loadWalkSettings,
@@ -33,6 +35,7 @@ const VIEWS: { label: string; view: 'top' | 'front' | 'back' | 'left' | 'right' 
 ]
 
 export default function ViewerWidget({ context }: { context: WidgetContext }) {
+  const headerSlot = useContext(WidgetHeaderSlotContext)
   const wrapRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<CameraController | null>(null)
@@ -153,52 +156,54 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
     return <div className="widget-placeholder">接続情報が不足しています</div>
   }
 
+  // ツールバー本体。ヘッダースロットがあればそこ (ウィンドウ最上部) に固定描画する
+  const toolbar = (
+    <div className="viewer-tools">
+      <button title="全体にズーム" onClick={zoomAll} disabled={!ready}>
+        ⊹
+      </button>
+      <button
+        title="座標表示 ON/OFF"
+        className={showCoords ? 'on' : ''}
+        onClick={() => setShowCoords((v) => !v)}
+        disabled={!ready}
+      >
+        📍
+      </button>
+      <button
+        title="ナビゲーション"
+        className={showNav ? 'on' : ''}
+        onClick={() => setShowNav((v) => !v)}
+        disabled={!ready}
+      >
+        🧭
+      </button>
+      <button
+        title="ウォークスルー (一人称移動)"
+        className={walking ? 'on' : ''}
+        onClick={toggleWalk}
+        disabled={!ready}
+      >
+        🚶
+      </button>
+      <button
+        title="ウォークスルー設定 (キー割当)"
+        className={showWalkSettings ? 'on' : ''}
+        onClick={() => setShowWalkSettings((v) => !v)}
+        disabled={!ready}
+      >
+        ⚙
+      </button>
+      <button title={isFullscreen ? '全画面を終了' : '全画面表示'} onClick={toggleFullscreen}>
+        {isFullscreen ? '🗗' : '⛶'}
+      </button>
+    </div>
+  )
+
   return (
     <div className="viewer-widget" ref={wrapRef}>
-      {/* カード上部の固定ツールバー (3D に重ならない) */}
-      <div className="viewer-bar">
-        <button title="全体にズーム" onClick={zoomAll} disabled={!ready}>
-          ⊹
-        </button>
-        <button
-          title="座標表示 ON/OFF"
-          className={showCoords ? 'on' : ''}
-          onClick={() => setShowCoords((v) => !v)}
-          disabled={!ready}
-        >
-          📍
-        </button>
-        <button
-          title="ナビゲーション"
-          className={showNav ? 'on' : ''}
-          onClick={() => setShowNav((v) => !v)}
-          disabled={!ready}
-        >
-          🧭
-        </button>
-        <button
-          title="ウォークスルー (一人称移動)"
-          className={walking ? 'on' : ''}
-          onClick={toggleWalk}
-          disabled={!ready}
-        >
-          🚶
-        </button>
-        <button
-          title="ウォークスルー設定 (キー割当)"
-          className={showWalkSettings ? 'on' : ''}
-          onClick={() => setShowWalkSettings((v) => !v)}
-          disabled={!ready}
-        >
-          ⚙
-        </button>
-        <button
-          title={isFullscreen ? '全画面を終了' : '全画面表示'}
-          onClick={toggleFullscreen}
-        >
-          {isFullscreen ? '🗗' : '⛶'}
-        </button>
-      </div>
+      {/* ツールバー: ヘッダー(ウィンドウ最上部)に差し込む。スロットが無い場合のみ自前バー表示 */}
+      {headerSlot ? createPortal(toolbar, headerSlot) : <div className="viewer-bar">{toolbar}</div>}
 
       {/* 3D 表示エリア */}
       <div ref={stageRef} className={'viewer-stage' + (walking ? ' walking' : '')}>
