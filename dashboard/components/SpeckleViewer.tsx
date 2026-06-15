@@ -77,6 +77,10 @@ export default function SpeckleViewer({
         if (disposed) return
 
         const camera = viewer.createExtension(CameraController)
+        // モデル中心 (ターゲット) を軸に回転する固定オービットにする。
+        // 既定の orbitAroundCursor だと、背景ドラッグ時などにモデルが
+        // 画面外へ逃げてしまうため、回転中心をモデル中心に固定する。
+        camera.options = { orbitAroundCursor: false }
         const selection = viewer.createExtension(SelectionExtension)
         const filtering = viewer.createExtension(FilteringExtension)
 
