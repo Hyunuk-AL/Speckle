@@ -10,6 +10,7 @@ import DashboardGrid from '@/components/board/DashboardGrid'
 import WidgetPalette from '@/components/board/WidgetPalette'
 import { renderWidgetBody, type WidgetContext } from '@/components/board/widgets/registry'
 import { useDashboard } from '@/lib/dashboard/store'
+import { DashboardDataProvider } from '@/lib/dashboard/data'
 import { exportDashboard } from '@/lib/dashboard/persistence'
 import { loadSettings, type ConnectionSettings } from '@/lib/settings'
 import type { Widget } from '@/lib/dashboard/types'
@@ -39,13 +40,20 @@ function BuilderInner() {
     : null
 
   const renderBody = useCallback(
-    (widget: Widget) => (context ? renderWidgetBody(widget, context) : null),
-    [context]
+    (widget: Widget) =>
+      context
+        ? renderWidgetBody(widget, context, {
+            editable,
+            onConfigChange: (config) => dispatch({ type: 'updateConfig', id: widget.id, config })
+          })
+        : null,
+    [context, editable, dispatch]
   )
 
   if (!settings || !context) return null
 
   return (
+    <DashboardDataProvider>
     <div className="builder">
       <WidgetPalette editable={editable} onAdd={(type) => dispatch({ type: 'add', widgetType: type })} />
 
@@ -97,6 +105,7 @@ function BuilderInner() {
         </div>
       </div>
     </div>
+    </DashboardDataProvider>
   )
 }
 

@@ -14,6 +14,7 @@ export type DashboardAction =
   | { type: 'remove'; id: string }
   | { type: 'updateLayout'; id: string; layout: WidgetLayout }
   | { type: 'updateTitle'; id: string; title: string }
+  | { type: 'updateConfig'; id: string; config: Record<string, unknown> }
   | { type: 'rename'; name: string }
   | { type: 'reset' }
 
@@ -61,6 +62,13 @@ function reducer(state: DashboardDef, action: DashboardAction): DashboardDef {
         ...state,
         widgets: state.widgets.map((w) =>
           w.id === action.id ? { ...w, title: action.title } : w
+        )
+      }
+    case 'updateConfig':
+      return {
+        ...state,
+        widgets: state.widgets.map((w) =>
+          w.id === action.id ? { ...w, config: { ...w.config, ...action.config } } : w
         )
       }
     case 'rename':

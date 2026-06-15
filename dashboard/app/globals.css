@@ -632,6 +632,150 @@ tfoot td {
   font-size: 11px;
 }
 
+/* ===== データ連動カード (M2) ===== */
+
+/* カード設定バー (編集モード時) */
+.card-config {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fbfdff;
+  font-size: 11px;
+}
+
+.card-field {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #555;
+}
+
+.card-field select,
+.card-unit {
+  font: inherit;
+  font-size: 11px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+  padding: 2px 4px;
+  max-width: 150px;
+}
+
+.card-unit {
+  width: 60px;
+}
+
+.card-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.card-chip {
+  border: 1px solid #cbd5e1;
+  background: #f1f5f9;
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.card-chip:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* KPI */
+.kpi-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px;
+}
+
+.kpi-value {
+  font-size: 32px;
+  font-weight: bold;
+  color: #1f2937;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.kpi-unit {
+  font-size: 15px;
+  font-weight: normal;
+  color: #6b7280;
+  margin-left: 4px;
+}
+
+.kpi-caption {
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* チャート */
+.chart-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+/* テーブル */
+.table-widget {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.table-scroll {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid #f1f5f9;
+  padding: 4px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.data-table th {
+  position: sticky;
+  top: 0;
+  background: #f8fafc;
+  z-index: 1;
+}
+
+.table-note {
+  font-size: 10px;
+  color: #9ca3af;
+  padding: 4px 8px;
+}
+
 /* 3D ビューウィジェットのツールバー/オーバーレイ */
 .viewer-widget {
   position: absolute;

@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic'
 import { type CameraController, type Viewer } from '@speckle/viewer'
 import type { ViewerReadyPayload } from '@/components/SpeckleViewer'
 import { WidgetHeaderSlotContext } from '../WidgetFrame'
+import { useDashboardData } from '@/lib/dashboard/data'
 import {
   WalkthroughController,
   loadWalkSettings,
@@ -36,6 +37,7 @@ const VIEWS: { label: string; view: 'top' | 'front' | 'back' | 'left' | 'right' 
 
 export default function ViewerWidget({ context }: { context: WidgetContext }) {
   const headerSlot = useContext(WidgetHeaderSlotContext)
+  const { setPayload } = useDashboardData()
   const wrapRef = useRef<HTMLDivElement>(null)
   const stageRef = useRef<HTMLDivElement>(null)
   const cameraRef = useRef<CameraController | null>(null)
@@ -53,11 +55,21 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
   const [showWalkSettings, setShowWalkSettings] = useState(false)
   const [walkSettings, setWalkSettings] = useState<WalkSettings>(loadWalkSettings)
 
-  const handleReady = useCallback((payload: ViewerReadyPayload) => {
-    cameraRef.current = payload.camera
-    viewerRef.current = payload.viewer
-    setReady(true)
-  }, [])
+  const handleReady = useCallback(
+    (payload: ViewerReadyPayload) => {
+      cameraRef.current = payload.camera
+      viewerRef.current = payload.viewer
+      setReady(true)
+      // 他カード (KPI/チャート/表) が参照できるよう共有コンテキストへ公開
+      setPayload(payload)
+    },
+    [setPayload]
+  )
+
+  // アンマウント時に公開データを解除
+  useEffect(() => {
+    return () => setPayload(null)
+  }, [setPayload])
 
   // ウォークスルーの開始/終了
   const toggleWalk = useCallback(() => {
