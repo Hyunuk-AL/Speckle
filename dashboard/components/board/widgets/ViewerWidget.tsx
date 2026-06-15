@@ -86,15 +86,17 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
     return () => window.clearTimeout(timer)
   }, [walking])
 
-  // ウォークスルー中のフリールック: マウス移動だけで視点回転 (ボタン不要)
+  // ウォークスルー中のフリールック: マウス移動だけで視点回転 (ボタン不要)。
+  // canvas のイベント伝播に依存しないよう window で確実に拾い、stage 上のときだけ回転。
   useEffect(() => {
-    const stage = stageRef.current
-    if (!walking || !stage) return
+    if (!walking) return
     const onMove = (e: PointerEvent) => {
+      const stage = stageRef.current
+      if (!stage || !stage.contains(e.target as Node)) return
       walkRef.current?.look(e.movementX || 0, e.movementY || 0)
     }
-    stage.addEventListener('pointermove', onMove)
-    return () => stage.removeEventListener('pointermove', onMove)
+    window.addEventListener('pointermove', onMove)
+    return () => window.removeEventListener('pointermove', onMove)
   }, [walking])
 
   // 設定変更を実行中のコントローラへ反映 + 保存
@@ -111,9 +113,10 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
     }
   }, [])
 
-  // 全画面状態の同期
+  // 全画面状態の同期 (カード全体を全画面化するため frame を基準に判定)
   useEffect(() => {
-    const onChange = () => setIsFullscreen(document.fullscreenElement === wrapRef.current)
+    const onChange = () =>
+      setIsFullscreen(document.fullscreenElement?.contains(wrapRef.current) ?? false)
     document.addEventListener('fullscreenchange', onChange)
     return () => document.removeEventListener('fullscreenchange', onChange)
   }, [])
@@ -122,7 +125,9 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
     if (document.fullscreenElement) {
       void document.exitFullscreen()
     } else {
-      void wrapRef.current?.requestFullscreen()
+      // ツールバーはカードのヘッダーにあるため、カード全体 (.widget-frame) を全画面化する
+      const frame = wrapRef.current?.closest('.widget-frame') as HTMLElement | null
+      void (frame ?? wrapRef.current)?.requestFullscreen()
     }
   }, [])
 
@@ -205,7 +210,7 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
       {/* ツールバー: ヘッダー(ウィンドウ最上部)に差し込む。スロットが無い場合のみ自前バー表示 */}
       {headerSlot ? createPortal(toolbar, headerSlot) : <div className="viewer-bar">{toolbar}</div>}
 
-      {/* 3D 表示エリア */}
+      {/* 3D 表示エリア (ここだけがスクロールする) */}
       <div ref={stageRef} className={'viewer-stage' + (walking ? ' walking' : '')}>
         <SpeckleViewer
           serverUrl={context.serverUrl}
@@ -215,48 +220,50 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
           onReady={handleReady}
           onObjectClicked={() => {}}
         />
-
-        {/* ウォークスルー設定パネル */}
-        {showWalkSettings && (
-          <WalkthroughSettings
-            settings={walkSettings}
-            onChange={setWalkSettings}
-            onClose={() => setShowWalkSettings(false)}
-          />
-        )}
-
-        {/* ウォークスルー中の操作ヒント (一定時間で自動的に消える) */}
-        {showHud && (
-          <div className="walk-hud">
-            🚶 WASD/矢印で移動、マウス移動で見回し、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
-          </div>
-        )}
-
-        {/* 座標表示 (左下) */}
-        {showCoords && (
-          <div className="viewer-coords">
-            {coords ? (
-              <>
-                <div>視点 X {fmt(coords.px)} / Y {fmt(coords.py)} / Z {fmt(coords.pz)}</div>
-                <div>注視 X {fmt(coords.tx)} / Y {fmt(coords.ty)} / Z {fmt(coords.tz)}</div>
-              </>
-            ) : (
-              <div>座標取得中...</div>
-            )}
-          </div>
-        )}
-
-        {/* ナビゲーション (右下) */}
-        {showNav && (
-          <div className="viewer-nav">
-            {VIEWS.map((v) => (
-              <button key={v.view} onClick={() => setView(v.view)}>
-                {v.label}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
+
+      {/* 以下のオーバーレイは stage の外 (スクロールしない層) に置く */}
+
+      {/* ウォークスルー設定パネル (3D のスクロールに影響されないポップアップ) */}
+      {showWalkSettings && (
+        <WalkthroughSettings
+          settings={walkSettings}
+          onChange={setWalkSettings}
+          onClose={() => setShowWalkSettings(false)}
+        />
+      )}
+
+      {/* ウォークスルー中の操作ヒント (一定時間で自動的に消える) */}
+      {showHud && (
+        <div className="walk-hud">
+          🚶 WASD/矢印で移動、マウス移動で見回し、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
+        </div>
+      )}
+
+      {/* 座標表示 (左下) */}
+      {showCoords && (
+        <div className="viewer-coords">
+          {coords ? (
+            <>
+              <div>視点 X {fmt(coords.px)} / Y {fmt(coords.py)} / Z {fmt(coords.pz)}</div>
+              <div>注視 X {fmt(coords.tx)} / Y {fmt(coords.ty)} / Z {fmt(coords.tz)}</div>
+            </>
+          ) : (
+            <div>座標取得中...</div>
+          )}
+        </div>
+      )}
+
+      {/* ナビゲーション (右下) */}
+      {showNav && (
+        <div className="viewer-nav">
+          {VIEWS.map((v) => (
+            <button key={v.view} onClick={() => setView(v.view)}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

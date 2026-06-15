@@ -641,8 +641,13 @@ tfoot td {
   overflow: hidden;
 }
 
-.viewer-widget:fullscreen {
-  background: #f3f4f6;
+/* 全画面はカード全体 (.widget-frame) を対象にし、ヘッダーのツールバーも表示する */
+.widget-frame:fullscreen {
+  background: #fff;
+}
+
+.widget-frame:fullscreen .widget-body {
+  flex: 1;
 }
 
 /* カード上部に固定するツールバー (3D に重ならない) */
