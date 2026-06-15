@@ -592,3 +592,91 @@ tfoot td {
 .placeholder-note {
   font-size: 11px;
 }
+
+/* 3D ビューウィジェットのツールバー/オーバーレイ */
+.viewer-widget {
+  position: absolute;
+  inset: 0;
+}
+
+.viewer-widget:fullscreen {
+  background: #f3f4f6;
+}
+
+.viewer-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 20;
+}
+
+.viewer-toolbar button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.viewer-toolbar button:hover:not(:disabled) {
+  background: #eef2ff;
+}
+
+.viewer-toolbar button.on {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.viewer-toolbar button:disabled {
+  opacity: 0.5;
+}
+
+.viewer-coords {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 20;
+  background: rgba(17, 24, 39, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  padding: 6px 9px;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.viewer-nav {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, 30px);
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 6px;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.viewer-nav button {
+  height: 28px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  background: #fff;
+  font-size: 12px;
+}
+
+.viewer-nav button:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+}
