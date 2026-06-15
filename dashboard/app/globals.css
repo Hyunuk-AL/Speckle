@@ -650,6 +650,11 @@ tfoot td {
   min-height: 0;
 }
 
+/* ウォークスルー中は十字カーソルにして見回し中だと分かるように */
+.viewer-stage.walking {
+  cursor: crosshair;
+}
+
 .viewer-coords {
   position: absolute;
   left: 8px;

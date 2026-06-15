@@ -32,6 +32,8 @@ export type WalkSettings = {
   dashMultiplier: number
   /** しゃがみ時に視点を下げる量 */
   crouchOffset: number
+  /** 視点回転(見回し)の感度 */
+  lookSpeed: number
 }
 
 export const ACTION_LABELS: Record<WalkAction, string> = {
@@ -58,7 +60,8 @@ export const DEFAULT_WALK_SETTINGS: WalkSettings = {
   },
   moveSpeed: 6,
   dashMultiplier: 3,
-  crouchOffset: 1
+  crouchOffset: 1,
+  lookSpeed: 1
 }
 
 const STORAGE_KEY = 'speckle-poc-walkthrough'
@@ -105,6 +108,8 @@ export function keyLabel(code: string): string {
 
 type FlyLikeControls = {
   moveBy: (v: Vec3) => void
+  rotateBy: (v: { x: number; y: number }) => void
+  options: Record<string, unknown>
 }
 
 /**
@@ -148,10 +153,19 @@ export class WalkthroughController {
     // オービット → フライへ切替
     this.camera.toggleControls()
     this.fly = this.camera.controls as unknown as FlyLikeControls
+    // 組み込みの look (左ボタン押下中のみ) を無効化し、フリールックを自前で行う
+    this.fly.options = { enableLook: false }
     window.addEventListener('keydown', this.onKeyDown, true)
     window.addEventListener('keyup', this.onKeyUp, true)
     this.lastTime = performance.now()
     this.rafId = requestAnimationFrame(this.tick)
+  }
+
+  /** フリールック: マウス移動量から視点を回転する (ボタン押下不要) */
+  look(movementX: number, movementY: number) {
+    if (!this.active || !this.fly) return
+    const f = 0.005 * this.settings.lookSpeed
+    this.fly.rotateBy({ x: f * movementY, y: f * movementX })
   }
 
   disable() {
@@ -165,6 +179,8 @@ export class WalkthroughController {
       this.fly?.moveBy(this.vec(0, this.settings.crouchOffset, 0))
       this.crouched = false
     }
+    // 組み込み look を元に戻す
+    if (this.fly) this.fly.options = { enableLook: true }
     // フライ → オービットへ戻す
     this.camera.toggleControls()
     this.fly = null

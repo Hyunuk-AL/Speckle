@@ -56,7 +56,10 @@ export default function WalkthroughSettings({ settings, onChange, onClose }: Pro
     })
   }
 
-  const setNumber = (key: 'moveSpeed' | 'dashMultiplier' | 'crouchOffset', value: number) => {
+  const setNumber = (
+    key: 'moveSpeed' | 'dashMultiplier' | 'crouchOffset' | 'lookSpeed',
+    value: number
+  ) => {
     onChange({ ...settings, [key]: value })
   }
 
@@ -105,6 +108,18 @@ export default function WalkthroughSettings({ settings, onChange, onClose }: Pro
             onChange={(e) => setNumber('crouchOffset', Number(e.target.value))}
           />
           <em>{settings.crouchOffset}</em>
+        </label>
+        <label className="walk-row">
+          <span>視点感度</span>
+          <input
+            type="range"
+            min={0.2}
+            max={3}
+            step={0.1}
+            value={settings.lookSpeed}
+            onChange={(e) => setNumber('lookSpeed', Number(e.target.value))}
+          />
+          <em>×{settings.lookSpeed}</em>
         </label>
       </div>
 

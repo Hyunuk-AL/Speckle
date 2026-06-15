@@ -189,7 +189,12 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
       </div>
 
       {/* 3D 表示エリア */}
-      <div className="viewer-stage">
+      <div
+        className={'viewer-stage' + (walking ? ' walking' : '')}
+        onPointerMove={(e) => {
+          if (walking) walkRef.current?.look(e.movementX, e.movementY)
+        }}
+      >
         <SpeckleViewer
           serverUrl={context.serverUrl}
           token={context.token}
@@ -211,7 +216,7 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
         {/* ウォークスルー中の操作ヒント (一定時間で自動的に消える) */}
         {showHud && (
           <div className="walk-hud">
-            🚶 WASD/矢印で移動、マウスドラッグで視点、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
+            🚶 WASD/矢印で移動、マウス移動で見回し、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
           </div>
         )}
 
