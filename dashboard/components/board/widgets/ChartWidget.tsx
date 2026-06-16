@@ -8,7 +8,7 @@ import { PieChart, BarChart } from 'echarts/charts'
 import { TooltipComponent, GridComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import type { Widget } from '@/lib/dashboard/types'
-import { useDashboardData } from '@/lib/dashboard/data'
+import { useDashboardData, highlightInViewer } from '@/lib/dashboard/data'
 import { groupableProperties, measurableProperties } from '@/lib/aggregate'
 import {
   AGGREGATIONS,
@@ -83,13 +83,18 @@ export default function ChartWidget({ widget, editable, onConfigChange }: Props)
             series: [{ type: 'bar', data }]
           }
     )
+    // クリックでそのグループの要素を 3D ビューでハイライト
+    chart.on('click', (params) => {
+      const row = rows[params.dataIndex]
+      if (row) highlightInViewer(payload, row.ids)
+    })
     const ro = new ResizeObserver(() => chart.resize())
     ro.observe(chartRef.current)
     return () => {
       ro.disconnect()
       chart.dispose()
     }
-  }, [rows, chartType])
+  }, [rows, chartType, payload])
 
   if (!payload) return <NoData />
 

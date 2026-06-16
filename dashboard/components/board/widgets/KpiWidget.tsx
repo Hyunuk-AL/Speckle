@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react'
 import type { Widget } from '@/lib/dashboard/types'
-import { useDashboardData } from '@/lib/dashboard/data'
+import { useDashboardData, highlightInViewer } from '@/lib/dashboard/data'
 import { groupableProperties, measurableProperties } from '@/lib/aggregate'
 import {
   AGGREGATIONS,
@@ -110,7 +110,11 @@ export default function KpiWidget({ widget, editable, onConfigChange }: Props) {
       )}
 
       <div className="kpi-body">
-        <div className="kpi-value">
+        <div
+          className="kpi-value clickable"
+          title="クリックで対象要素を 3D ハイライト"
+          onClick={() => result && highlightInViewer(payload, result.ids)}
+        >
           {result ? formatMetric(result.metric) : '-'}
           {cfg.unit && <span className="kpi-unit">{cfg.unit}</span>}
         </div>

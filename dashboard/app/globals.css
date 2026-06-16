@@ -776,6 +776,22 @@ tfoot td {
   padding: 4px 8px;
 }
 
+.data-row {
+  cursor: pointer;
+}
+
+.data-row:hover {
+  background: #eff6ff;
+}
+
+.kpi-value.clickable {
+  cursor: pointer;
+}
+
+.kpi-value.clickable:hover {
+  color: #2563eb;
+}
+
 /* 3D ビューウィジェットのツールバー/オーバーレイ */
 .viewer-widget {
   position: absolute;

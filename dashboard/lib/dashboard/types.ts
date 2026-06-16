@@ -42,13 +42,11 @@ export type WidgetCatalogEntry = {
 
 export const WIDGET_CATALOG: WidgetCatalogEntry[] = [
   { type: 'viewer', label: '3D ビュー', category: '基本', icon: '🧊', defaultSize: { w: 6, h: 8 }, implemented: true },
-  { type: 'kpi', label: 'KPI / 数値', category: '基本', icon: '🔢', defaultSize: { w: 3, h: 2 }, implemented: false },
-  { type: 'text', label: 'テキスト', category: '基本', icon: '📝', defaultSize: { w: 3, h: 2 }, implemented: false },
-  { type: 'chart', label: 'チャート', category: 'チャート', icon: '📊', defaultSize: { w: 6, h: 4 }, implemented: false },
-  { type: 'table', label: 'テーブル', category: '表', icon: '🗂️', defaultSize: { w: 6, h: 5 }, implemented: false },
+  { type: 'kpi', label: 'KPI / 数値', category: '基本', icon: '🔢', defaultSize: { w: 3, h: 2 }, implemented: true },
+  { type: 'chart', label: 'チャート', category: 'チャート', icon: '📊', defaultSize: { w: 6, h: 4 }, implemented: true },
+  { type: 'table', label: 'テーブル', category: '表', icon: '🗂️', defaultSize: { w: 6, h: 5 }, implemented: true },
   { type: 'filter', label: 'フィルタ', category: 'フィルタ', icon: '🔎', defaultSize: { w: 3, h: 3 }, implemented: false },
-  { type: 'section', label: 'セクション', category: 'レイアウト', icon: '➖', defaultSize: { w: 12, h: 1 }, implemented: false },
-  { type: 'propertyCheck', label: 'プロパティ検証', category: '検証', icon: '✅', defaultSize: { w: 4, h: 4 }, implemented: false }
+  { type: 'section', label: 'セクション', category: 'レイアウト', icon: '➖', defaultSize: { w: 12, h: 1 }, implemented: false }
 ]
 
 export function catalogEntry(type: WidgetType): WidgetCatalogEntry {

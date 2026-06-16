@@ -28,3 +28,21 @@ export function useDashboardData(): DashboardDataValue {
   if (!ctx) throw new Error('useDashboardData は DashboardDataProvider の内側で使用してください')
   return ctx
 }
+
+/**
+ * 集計プロパティ ID 群を 3D ビューで選択ハイライトする (カード → 3D 連動)。
+ * zoom=true で該当要素にズームする。
+ */
+export function highlightInViewer(
+  payload: ViewerReadyPayload | null,
+  propertyIds: string[],
+  zoom = false
+): void {
+  if (!payload) return
+  const ids = payload.resolveRenderableIds(propertyIds)
+  payload.selection.clearSelection()
+  if (ids.length === 0) return
+  payload.selection.selectObjects(ids)
+  if (zoom) payload.camera.setCameraView(ids, true)
+}
+

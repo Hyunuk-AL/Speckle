@@ -4,7 +4,7 @@
 
 import { useMemo } from 'react'
 import type { Widget } from '@/lib/dashboard/types'
-import { useDashboardData } from '@/lib/dashboard/data'
+import { useDashboardData, highlightInViewer } from '@/lib/dashboard/data'
 import { groupableProperties, measurableProperties } from '@/lib/aggregate'
 import { buildObjectRows, shortLabel } from '@/lib/dashboard/compute'
 import { ConfigBar, Field, NoData } from './ConfigControls'
@@ -86,7 +86,12 @@ export default function TableWidget({ widget, editable, onConfigChange }: Props)
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                className="data-row"
+                title="クリックで 3D ハイライト"
+                onClick={() => highlightInViewer(payload, [row.id], true)}
+              >
                 {columns.map((c) => (
                   <td key={c}>{row.cells[c] ?? ''}</td>
                 ))}
