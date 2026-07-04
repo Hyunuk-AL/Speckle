@@ -10,31 +10,19 @@ import { useMemo, useState } from 'react'
 import type { Widget } from '@/lib/dashboard/types'
 import { useDashboardData, highlightInViewer } from '@/lib/dashboard/data'
 import { groupableProperties, measurableProperties } from '@/lib/aggregate'
+import { anyValueMap, categoryProperty, shortLabel } from '@/lib/dashboard/compute'
 import {
-  anyValueMap,
-  categoryProperty,
-  guessKey,
-  propOnIds,
-  shortLabel
-} from '@/lib/dashboard/compute'
+  DEFAULT_COLUMN_ORDER,
+  FINISH_COLUMNS,
+  guessFinishKeys,
+  guessLevelKey,
+  guessRoomNameKey,
+  guessRoomNumberKey,
+  isTdKey,
+  roomScopedProps,
+  type FinishColumn
+} from '@/lib/dashboard/finish'
 import { ConfigBar, Field, NoData, PropertySelect } from './ConfigControls'
-
-// 仕上列の定義 (キーは config 内の設定名)
-type FinishColumn = { cfgKey: string; label: string; guess: RegExp[] }
-
-const FINISH_COLUMNS: FinishColumn[] = [
-  { cfgKey: 'floorKey', label: '床', guess: [/床仕上/i, /floor.?finish/i, /床/i] },
-  { cfgKey: 'wallKey', label: '壁', guess: [/壁仕上/i, /wall.?finish/i, /壁/i] },
-  { cfgKey: 'ceilingKey', label: '天井', guess: [/天井仕上/i, /ceiling.?finish/i, /天井/i] },
-  { cfgKey: 'skirtingKey', label: '巾木', guess: [/巾木/i, /base.?finish/i] },
-  {
-    cfgKey: 'corniceKey',
-    label: '廻り縁',
-    guess: [/廻り縁|廻縁|回り縁|まわり縁/i, /cornice|crown|picture.?rail/i]
-  }
-]
-
-const DEFAULT_ORDER = FINISH_COLUMNS.map((c) => c.cfgKey)
 
 type FinishConfig = {
   roomCategory?: string
@@ -64,7 +52,7 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
 
   // 仕上列の表示順 (config の columnOrder を反映、欠けは末尾補完)
   const orderedColumns = useMemo(() => {
-    const order = cfg.columnOrder ?? DEFAULT_ORDER
+    const order = cfg.columnOrder ?? DEFAULT_COLUMN_ORDER
     const byKey = new Map(FINISH_COLUMNS.map((c) => [c.cfgKey, c]))
     const cols: FinishColumn[] = []
     for (const k of order) {
@@ -93,50 +81,26 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
   }, [catProp, roomCategory])
 
   // 部屋カテゴリの要素が値を持つパラメータ (部屋名/番号セレクトの候補)
-  const roomProps = useMemo(() => {
-    const scoped = roomIds.size > 0 ? allProps.filter((p) => propOnIds(p, roomIds)) : allProps
-    return [...scoped].sort((a, b) => shortLabel(a.key).localeCompare(shortLabel(b.key), 'ja'))
-  }, [allProps, roomIds])
+  const roomProps = useMemo(() => roomScopedProps(allProps, roomIds), [allProps, roomIds])
 
-  // 床・壁・天井などの仕上列の候補:
-  //  ・「TD_」で始まる (いずれかのセグメント)
-  //  ・かつ Revit「部屋」カテゴリの要素が値を持つもの
-  //  ・名前順にソート
-  const roomTdProps = useMemo(
-    () => roomProps.filter((p) => /(^|\.)TD_/.test(p.key)),
-    [roomProps]
-  )
+  // 床・壁・天井などの仕上列の候補: 部屋カテゴリの「TD_」始まりのみ (名前順)
+  const roomTdProps = useMemo(() => roomProps.filter((p) => isTdKey(p.key)), [roomProps])
 
-  // 各列のプロパティキー (未設定なら部屋カテゴリのパラメータの中から推測)
+  // 各列のプロパティキー。
+  // 既定の解決 (「名前」パラメータ優先 / TD_<部位>_仕上_名称) は
+  // scripts/test-finish-keys.mjs で実データ相当のフィクスチャにより検証済み。
   const keys = useMemo(() => {
+    const guessed = guessFinishKeys(roomProps)
     const k: Record<string, string> = {
-      // Revit「部屋」の「名前」パラメータを最優先で拾う
-      nameKey:
-        (cfg.nameKey as string) ??
-        guessKey(roomProps, [
-          /(^|\.)名前(\.value)?$/,
-          /(^|\.)部屋名(\.value)?$/,
-          /(^|\.)Name(\.value)?$/,
-          /(^|\.)name$/i
-        ]),
-      numberKey:
-        (cfg.numberKey as string) ??
-        guessKey(roomProps, [
-          /(^|\.)番号(\.value)?$/,
-          /(^|\.)部屋番号(\.value)?$/,
-          /(^|\.)Number(\.value)?$/,
-          /(^|\.)number$/i
-        ]),
-      levelKey:
-        (cfg.levelKey as string) ??
-        guessKey(roomProps, [/^level\.name$/i, /(^|\.)レベル(\.value)?$/, /(^|\.)level(\.|$)/i])
+      nameKey: (cfg.nameKey as string) ?? guessRoomNameKey(roomProps),
+      numberKey: (cfg.numberKey as string) ?? guessRoomNumberKey(roomProps),
+      levelKey: (cfg.levelKey as string) ?? guessLevelKey(roomProps)
     }
-    // 仕上列は 部屋カテゴリの TD_ パラメータの中から推測
     for (const col of FINISH_COLUMNS) {
-      k[col.cfgKey] = (cfg[col.cfgKey] as string | undefined) ?? guessKey(roomTdProps, col.guess)
+      k[col.cfgKey] = (cfg[col.cfgKey] as string | undefined) ?? guessed[col.cfgKey]
     }
     return k
-  }, [cfg, roomProps, roomTdProps])
+  }, [cfg, roomProps])
 
   // 部屋の行データ
   const rooms = useMemo(() => {
