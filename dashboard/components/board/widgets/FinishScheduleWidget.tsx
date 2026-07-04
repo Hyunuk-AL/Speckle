@@ -14,6 +14,7 @@ import {
   anyValueMap,
   categoryProperty,
   guessKey,
+  propOnIds,
   shortLabel
 } from '@/lib/dashboard/compute'
 import { ConfigBar, Field, NoData, PropertySelect } from './ConfigControls'
@@ -59,10 +60,6 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
     () => [...groupableProperties(props), ...measurableProperties(props)],
     [props]
   )
-  // 各部位のパラメータ候補は「TD_」で始まるパラメータのみ
-  // (キー中のいずれかのセグメントが TD_ で始まるもの)
-  const tdProps = useMemo(() => allProps.filter((p) => /(^|\.)TD_/.test(p.key)), [allProps])
-
   const catProp = useMemo(() => categoryProperty(props), [props])
 
   // 仕上列の表示順 (config の columnOrder を反映、欠けは末尾補完)
@@ -85,6 +82,23 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
     return hit?.value ?? ''
   }, [cfg.roomCategory, catProp])
 
+  // 部屋カテゴリのオブジェクト ID 集合
+  const roomIds = useMemo(() => {
+    if (!catProp || !roomCategory) return new Set<string>()
+    const vg = catProp.valueGroups.find((g) => g.value === roomCategory)
+    return new Set(vg?.ids ?? [])
+  }, [catProp, roomCategory])
+
+  // 選択できるパラメータ候補:
+  //  ・「TD_」で始まる (いずれかのセグメント)
+  //  ・かつ Revit「部屋」カテゴリの要素が値を持つもの
+  //  ・名前順にソート
+  const roomTdProps = useMemo(() => {
+    const td = allProps.filter((p) => /(^|\.)TD_/.test(p.key))
+    const scoped = roomIds.size > 0 ? td.filter((p) => propOnIds(p, roomIds)) : td
+    return [...scoped].sort((a, b) => shortLabel(a.key).localeCompare(shortLabel(b.key), 'ja'))
+  }, [allProps, roomIds])
+
   // 各列のプロパティキー (未設定なら名前から推測)
   const keys = useMemo(() => {
     const k: Record<string, string> = {
@@ -92,12 +106,12 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
       numberKey: (cfg.numberKey as string) ?? guessKey(props, [/(^|\.)number$/i, /部屋番号/i]),
       levelKey: (cfg.levelKey as string) ?? guessKey(props, [/^level\.name$/i, /(^|\.)level(\.|$)/i])
     }
-    // 仕上列は TD_ パラメータの中から推測
+    // 仕上列は 部屋カテゴリの TD_ パラメータの中から推測
     for (const col of FINISH_COLUMNS) {
-      k[col.cfgKey] = (cfg[col.cfgKey] as string | undefined) ?? guessKey(tdProps, col.guess)
+      k[col.cfgKey] = (cfg[col.cfgKey] as string | undefined) ?? guessKey(roomTdProps, col.guess)
     }
     return k
-  }, [cfg, props, tdProps])
+  }, [cfg, props, roomTdProps])
 
   // 部屋の行データ
   const rooms = useMemo(() => {
@@ -200,15 +214,17 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
             <Field key={col.cfgKey} label={col.label}>
               <PropertySelect
                 value={keys[col.cfgKey]}
-                options={tdProps}
+                options={roomTdProps}
                 allowNone
                 noneLabel="(なし)"
                 onChange={(key) => onConfigChange({ [col.cfgKey]: key })}
               />
             </Field>
           ))}
-          {tdProps.length === 0 && (
-            <span className="hint">※「TD_」で始まるパラメータが見つかりません</span>
+          {roomTdProps.length === 0 && (
+            <span className="hint">
+              ※ 部屋カテゴリの「TD_」で始まるパラメータが見つかりません
+            </span>
           )}
         </ConfigBar>
       )}

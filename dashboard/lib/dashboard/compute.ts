@@ -172,6 +172,19 @@ export function anyValueMap(
   return map
 }
 
+/** そのプロパティが、指定オブジェクト集合のいずれかに値を持つか */
+export function propOnIds(p: PropertyInfo, ids: Set<string>): boolean {
+  if (isStringProperty(p)) {
+    return p.valueGroups.some((vg) => vg.ids.some((id) => ids.has(id)))
+  }
+  if (isNumericProperty(p)) {
+    return (p.valueGroups as { id?: string; ids?: string[] }[]).some((vg) =>
+      vg.id ? ids.has(vg.id) : (vg.ids?.some((id) => ids.has(id)) ?? false)
+    )
+  }
+  return false
+}
+
 /** 指定パラメータに「値が入っている」オブジェクト ID 集合 (空文字は値なし扱い) */
 export function idsWithValue(props: PropertyInfo[], key: string): Set<string> {
   const set = new Set<string>()
