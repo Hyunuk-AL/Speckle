@@ -1262,6 +1262,28 @@ button:focus-visible {
   color: var(--line);
 }
 
+.finish-col-head.draggable-col {
+  cursor: grab;
+  user-select: none;
+}
+
+.finish-col-head.draggable-col:hover {
+  background: var(--surface);
+}
+
+.finish-col-head.dragging {
+  opacity: 0.5;
+  background: var(--brand-soft);
+}
+
+.col-grip {
+  color: var(--line);
+  font-size: 9px;
+  margin-right: 3px;
+  letter-spacing: -2px;
+  vertical-align: 1px;
+}
+
 /* ============================================================
    CO₂
    ============================================================ */
