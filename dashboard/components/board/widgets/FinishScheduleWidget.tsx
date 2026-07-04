@@ -75,11 +75,14 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
     return cols
   }, [cfg.columnOrder])
 
-  // 部屋カテゴリの既定値: "部屋" / "Rooms" を含む値を自動検出
+  // 部屋カテゴリの既定値: 完全一致 ("部屋"/"Rooms") を優先し、無ければ部分一致
+  // ("部屋の分割" などの別カテゴリを誤検出しないため)
   const roomCategory = useMemo(() => {
     if (cfg.roomCategory) return cfg.roomCategory
-    const hit = catProp?.valueGroups.find((vg) => /room|部屋/i.test(vg.value))
-    return hit?.value ?? ''
+    const groups = catProp?.valueGroups ?? []
+    const exact = groups.find((vg) => /^(rooms?|部屋)$/i.test(vg.value.trim()))
+    const partial = groups.find((vg) => /rooms?|部屋/i.test(vg.value))
+    return (exact ?? partial)?.value ?? ''
   }, [cfg.roomCategory, catProp])
 
   // 部屋カテゴリのオブジェクト ID 集合
@@ -89,29 +92,51 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
     return new Set(vg?.ids ?? [])
   }, [catProp, roomCategory])
 
-  // 選択できるパラメータ候補:
-  //  ・「TD_」で始まる (いずれかのセグメント)
-  //  ・かつ Revit「部屋」カテゴリの要素が値を持つもの
-  //  ・名前順にソート
-  const roomTdProps = useMemo(() => {
-    const td = allProps.filter((p) => /(^|\.)TD_/.test(p.key))
-    const scoped = roomIds.size > 0 ? td.filter((p) => propOnIds(p, roomIds)) : td
+  // 部屋カテゴリの要素が値を持つパラメータ (部屋名/番号セレクトの候補)
+  const roomProps = useMemo(() => {
+    const scoped = roomIds.size > 0 ? allProps.filter((p) => propOnIds(p, roomIds)) : allProps
     return [...scoped].sort((a, b) => shortLabel(a.key).localeCompare(shortLabel(b.key), 'ja'))
   }, [allProps, roomIds])
 
-  // 各列のプロパティキー (未設定なら名前から推測)
+  // 床・壁・天井などの仕上列の候補:
+  //  ・「TD_」で始まる (いずれかのセグメント)
+  //  ・かつ Revit「部屋」カテゴリの要素が値を持つもの
+  //  ・名前順にソート
+  const roomTdProps = useMemo(
+    () => roomProps.filter((p) => /(^|\.)TD_/.test(p.key)),
+    [roomProps]
+  )
+
+  // 各列のプロパティキー (未設定なら部屋カテゴリのパラメータの中から推測)
   const keys = useMemo(() => {
     const k: Record<string, string> = {
-      nameKey: (cfg.nameKey as string) ?? guessKey(props, [/(^|\.)name$/i, /部屋名/i]),
-      numberKey: (cfg.numberKey as string) ?? guessKey(props, [/(^|\.)number$/i, /部屋番号/i]),
-      levelKey: (cfg.levelKey as string) ?? guessKey(props, [/^level\.name$/i, /(^|\.)level(\.|$)/i])
+      // Revit「部屋」の「名前」パラメータを最優先で拾う
+      nameKey:
+        (cfg.nameKey as string) ??
+        guessKey(roomProps, [
+          /(^|\.)名前(\.value)?$/,
+          /(^|\.)部屋名(\.value)?$/,
+          /(^|\.)Name(\.value)?$/,
+          /(^|\.)name$/i
+        ]),
+      numberKey:
+        (cfg.numberKey as string) ??
+        guessKey(roomProps, [
+          /(^|\.)番号(\.value)?$/,
+          /(^|\.)部屋番号(\.value)?$/,
+          /(^|\.)Number(\.value)?$/,
+          /(^|\.)number$/i
+        ]),
+      levelKey:
+        (cfg.levelKey as string) ??
+        guessKey(roomProps, [/^level\.name$/i, /(^|\.)レベル(\.value)?$/, /(^|\.)level(\.|$)/i])
     }
     // 仕上列は 部屋カテゴリの TD_ パラメータの中から推測
     for (const col of FINISH_COLUMNS) {
       k[col.cfgKey] = (cfg[col.cfgKey] as string | undefined) ?? guessKey(roomTdProps, col.guess)
     }
     return k
-  }, [cfg, props, roomTdProps])
+  }, [cfg, roomProps, roomTdProps])
 
   // 部屋の行データ
   const rooms = useMemo(() => {
@@ -210,6 +235,24 @@ export default function FinishScheduleWidget({ widget, editable, onConfigChange 
               </select>
             </Field>
           )}
+          <Field label="部屋名">
+            <PropertySelect
+              value={keys.nameKey}
+              options={roomProps}
+              allowNone
+              noneLabel="(選択)"
+              onChange={(key) => onConfigChange({ nameKey: key })}
+            />
+          </Field>
+          <Field label="番号">
+            <PropertySelect
+              value={keys.numberKey}
+              options={roomProps}
+              allowNone
+              noneLabel="(なし)"
+              onChange={(key) => onConfigChange({ numberKey: key })}
+            />
+          </Field>
           {orderedColumns.map((col) => (
             <Field key={col.cfgKey} label={col.label}>
               <PropertySelect
