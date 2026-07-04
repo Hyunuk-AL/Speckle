@@ -248,7 +248,7 @@ export default function ViewerWidget({ context }: { context: WidgetContext }) {
       {/* ウォークスルー中の操作ヒント (一定時間で自動的に消える) */}
       {showHud && (
         <div className="walk-hud">
-          🚶 WASD/矢印で移動、マウス移動で見回し、E/Q 上下、Shift ダッシュ、C しゃがみ（⚙で変更）
+          🚶 ↑↓ 前進/後退・←→ 旋回・A/D 平行移動・E/Q 上下・Shift ダッシュ・C しゃがみ・マウスで見回し（⚙で変更）
         </div>
       )}
 

@@ -8,6 +8,10 @@ import type { Widget } from '@/lib/dashboard/types'
 import ViewerWidget from './ViewerWidget'
 import KpiWidget from './KpiWidget'
 import TableWidget from './TableWidget'
+import ParamCheckWidget from './ParamCheckWidget'
+import FinishScheduleWidget from './FinishScheduleWidget'
+import Co2Widget from './Co2Widget'
+import ColorizeWidget from './ColorizeWidget'
 import PlaceholderWidget from './PlaceholderWidget'
 
 // ECharts を含むため、チャートカード使用時のみ読み込む
@@ -31,21 +35,24 @@ export function renderWidgetBody(
   context: WidgetContext,
   opts: WidgetRenderOptions
 ): ReactNode {
+  const common = { widget, editable: opts.editable, onConfigChange: opts.onConfigChange }
   switch (widget.type) {
     case 'viewer':
       return <ViewerWidget context={context} />
     case 'kpi':
-      return (
-        <KpiWidget widget={widget} editable={opts.editable} onConfigChange={opts.onConfigChange} />
-      )
+      return <KpiWidget {...common} />
     case 'chart':
-      return (
-        <ChartWidget widget={widget} editable={opts.editable} onConfigChange={opts.onConfigChange} />
-      )
+      return <ChartWidget {...common} />
     case 'table':
-      return (
-        <TableWidget widget={widget} editable={opts.editable} onConfigChange={opts.onConfigChange} />
-      )
+      return <TableWidget {...common} />
+    case 'paramCheck':
+      return <ParamCheckWidget {...common} />
+    case 'finish':
+      return <FinishScheduleWidget {...common} />
+    case 'co2':
+      return <Co2Widget {...common} />
+    case 'colorize':
+      return <ColorizeWidget {...common} />
     default:
       return <PlaceholderWidget widget={widget} />
   }

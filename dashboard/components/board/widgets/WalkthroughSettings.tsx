@@ -18,7 +18,18 @@ type Props = {
   onClose: () => void
 }
 
-const ACTIONS: WalkAction[] = ['forward', 'back', 'left', 'right', 'up', 'down', 'dash', 'crouch']
+const ACTIONS: WalkAction[] = [
+  'forward',
+  'back',
+  'turnLeft',
+  'turnRight',
+  'left',
+  'right',
+  'up',
+  'down',
+  'dash',
+  'crouch'
+]
 
 export default function WalkthroughSettings({ settings, onChange, onClose }: Props) {
   // キー取得待ちのアクション

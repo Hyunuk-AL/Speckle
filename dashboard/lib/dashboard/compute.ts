@@ -155,3 +155,90 @@ export function buildObjectRows(props: PropertyInfo[], columns: string[]): Objec
 export function formatMetric(n: number): string {
   return n.toLocaleString('ja-JP', { maximumFractionDigits: 2 })
 }
+
+/** id → 値 (文字列/数値どちらでも) のマップを作る */
+export function anyValueMap(
+  props: PropertyInfo[],
+  key: string
+): Map<string, string | number> {
+  const map = new Map<string, string | number>()
+  const sp = findString(props, key)
+  if (sp) {
+    for (const vg of sp.valueGroups) for (const id of vg.ids) map.set(id, vg.value)
+    return map
+  }
+  const np = findNumeric(props, key)
+  if (np) numericValueMap(np).forEach((v, id) => map.set(id, v))
+  return map
+}
+
+/** 指定パラメータに「値が入っている」オブジェクト ID 集合 (空文字は値なし扱い) */
+export function idsWithValue(props: PropertyInfo[], key: string): Set<string> {
+  const set = new Set<string>()
+  anyValueMap(props, key).forEach((v, id) => {
+    if (v !== '' && v !== null && v !== undefined) set.add(id)
+  })
+  return set
+}
+
+/** プロパティ一覧からパターンに合うキーを推測する (仕上表・CO2 の既定値用) */
+export function guessKey(props: PropertyInfo[], patterns: RegExp[]): string {
+  for (const re of patterns) {
+    const hit = props.find((p) => re.test(p.key))
+    if (hit) return hit.key
+  }
+  return ''
+}
+
+/** category プロパティ (無ければ最初の文字列プロパティ) を返す */
+export function categoryProperty(props: PropertyInfo[]): StringPropertyInfo | null {
+  return (
+    findString(props, 'category') ??
+    props.filter(isStringPropertyLocal).find((p) => /(^|\.)category$/i.test(p.key)) ??
+    null
+  )
+}
+
+function isStringPropertyLocal(p: PropertyInfo): p is StringPropertyInfo {
+  return p.type === 'string'
+}
+
+/** 簡易 CSV パーサ (ダブルクォート・BOM 対応の最小実装) */
+export function parseCsv(text: string): string[][] {
+  const clean = text.replace(/^﻿/, '')
+  const rows: string[][] = []
+  let row: string[] = []
+  let cell = ''
+  let inQuotes = false
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i]
+    if (inQuotes) {
+      if (ch === '"') {
+        if (clean[i + 1] === '"') {
+          cell += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        cell += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === ',') {
+      row.push(cell.trim())
+      cell = ''
+    } else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && clean[i + 1] === '\n') i++
+      row.push(cell.trim())
+      cell = ''
+      if (row.some((c) => c !== '')) rows.push(row)
+      row = []
+    } else {
+      cell += ch
+    }
+  }
+  row.push(cell.trim())
+  if (row.some((c) => c !== '')) rows.push(row)
+  return rows
+}

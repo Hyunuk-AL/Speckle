@@ -15,6 +15,8 @@ type Vec3 = { x: number; y: number; z: number }
 export type WalkAction =
   | 'forward'
   | 'back'
+  | 'turnLeft'
+  | 'turnRight'
   | 'left'
   | 'right'
   | 'up'
@@ -39,6 +41,8 @@ export type WalkSettings = {
 export const ACTION_LABELS: Record<WalkAction, string> = {
   forward: '前進',
   back: '後退',
+  turnLeft: '左旋回',
+  turnRight: '右旋回',
   left: '左移動',
   right: '右移動',
   up: '上昇',
@@ -47,12 +51,17 @@ export const ACTION_LABELS: Record<WalkAction, string> = {
   crouch: 'しゃがみ'
 }
 
+// ArchiCAD の 3D ウォークスルー操作に準拠:
+// 矢印キー = 前進/後退 + 左右旋回、W/S = 前後、A/D = 平行移動、
+// E/Q = 上昇/下降、Shift = ダッシュ、C = しゃがみ。すべて再割当可能。
 export const DEFAULT_WALK_SETTINGS: WalkSettings = {
   bindings: {
     forward: ['KeyW', 'ArrowUp'],
     back: ['KeyS', 'ArrowDown'],
-    left: ['KeyA', 'ArrowLeft'],
-    right: ['KeyD', 'ArrowRight'],
+    turnLeft: ['ArrowLeft'],
+    turnRight: ['ArrowRight'],
+    left: ['KeyA'],
+    right: ['KeyD'],
     up: ['KeyE'],
     down: ['KeyQ'],
     dash: ['ShiftLeft', 'ShiftRight'],
@@ -245,6 +254,12 @@ export class WalkthroughController {
     if (this.fly && p.size > 0) {
       const dash = p.has('dash') ? this.settings.dashMultiplier : 1
       const amount = this.settings.moveSpeed * dash * dt
+
+      // 旋回 (ArchiCAD の ←→ に相当)。ダッシュ中は旋回も速く
+      const turnAmount = 1.6 * this.settings.lookSpeed * dash * dt
+      const turnY =
+        (p.has('turnRight') ? turnAmount : 0) - (p.has('turnLeft') ? turnAmount : 0)
+      if (turnY !== 0) this.fly.rotateBy({ x: 0, y: turnY })
       let x = 0
       let y = 0
       let z = 0

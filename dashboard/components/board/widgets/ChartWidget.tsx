@@ -65,22 +65,46 @@ export default function ChartWidget({ widget, editable, onConfigChange }: Props)
       value: r.metric,
       itemStyle: { color: colorAt(i) }
     }))
+    // dataviz 規約: 控えめなグリッド/軸、角丸のバーエンド、セグメント間ギャップ
     chart.setOption(
       chartType === 'pie'
         ? {
+            textStyle: { color: '#3C3C3C' },
             tooltip: { trigger: 'item' },
-            series: [{ type: 'pie', radius: ['35%', '70%'], data, label: { fontSize: 10 } }]
+            series: [
+              {
+                type: 'pie',
+                radius: ['42%', '70%'],
+                data,
+                label: { fontSize: 10, color: '#3C3C3C' },
+                itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 4 }
+              }
+            ]
           }
         : {
+            textStyle: { color: '#3C3C3C' },
             tooltip: { trigger: 'axis' },
             grid: { left: 50, right: 16, top: 16, bottom: 60 },
             xAxis: {
               type: 'category',
               data: rows.map((r) => r.value || '(未設定)'),
-              axisLabel: { rotate: 40, fontSize: 9 }
+              axisLine: { lineStyle: { color: '#E8E8E8' } },
+              axisTick: { show: false },
+              axisLabel: { rotate: 40, fontSize: 9, color: '#707070' }
             },
-            yAxis: { type: 'value' },
-            series: [{ type: 'bar', data }]
+            yAxis: {
+              type: 'value',
+              splitLine: { lineStyle: { color: '#F4F5F7' } },
+              axisLabel: { fontSize: 9, color: '#707070' }
+            },
+            series: [
+              {
+                type: 'bar',
+                data,
+                barMaxWidth: 28,
+                itemStyle: { borderRadius: [4, 4, 0, 0] }
+              }
+            ]
           }
     )
     // クリックでそのグループの要素を 3D ビューでハイライト
